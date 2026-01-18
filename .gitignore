@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+venv/
+
+# Logs
+conversation_log.json
+web_conversation_log.json
+*.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+.claude/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Local files
+start_karambot.bat
+student_feedback_form.md
+models/

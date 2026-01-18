@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KaramBot 🙏 - Spiritual AI Chatbot</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header>
+            <h1>🙏 KaramBot</h1>
+            <p class="subtitle">AI-Powered Spiritual Guidance for Stress & Motivation</p>
+            <div class="status" id="status">
+                <span class="status-indicator" id="status-indicator">●</span>
+                <span id="status-text">Checking connection...</span>
+            </div>
+        </header>
+
+        <!-- Chat Container -->
+        <div class="chat-container" id="chat-container">
+            <div class="welcome-message">
+                <h2>Welcome! 🌟</h2>
+                <p>I'm here to help you with:</p>
+                <ul>
+                    <li>📚 Stress and Anxiety (exams, deadlines, pressure)</li>
+                    <li>😤 Conflict and Anger (relationships, disagreements)</li>
+                    <li>😔 Lack of Motivation (feeling stuck, giving up)</li>
+                    <li>😰 Fear and Doubt (career, failure, uncertainty)</li>
+                </ul>
+                <p><strong>Share what's on your mind, and I'll offer guidance from sacred teachings.</strong></p>
+            </div>
+        </div>
+
+        <!-- Input Area -->
+        <div class="input-area">
+            <textarea
+                id="user-input"
+                placeholder="Type your message here... (e.g., 'I'm stressed about my exams')"
+                rows="3"
+            ></textarea>
+            <div class="button-group">
+                <button id="send-btn" class="btn btn-primary">Send 📤</button>
+                <button id="save-btn" class="btn btn-secondary">Save Chat 💾</button>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer>
+            <p>Powered by Llama 3.1 8B • Wisdom from Gita, Quran, Bible, Guru Granth Sahib</p>
+            <p class="tech-info">RAG Architecture • Self-Hosted AI • 100% Private</p>
+        </footer>
+    </div>
+
+    <script>
+        const chatContainer = document.getElementById('chat-container');
+        const userInput = document.getElementById('user-input');
+        const sendBtn = document.getElementById('send-btn');
+        const saveBtn = document.getElementById('save-btn');
+        const statusIndicator = document.getElementById('status-indicator');
+        const statusText = document.getElementById('status-text');
+
+        // Check Ollama status on load
+        async function checkStatus() {
+            try {
+                const response = await fetch('/health');
+                const data = await response.json();
+
+                if (data.status === 'ok') {
+                    statusIndicator.className = 'status-indicator online';
+                    statusText.textContent = 'Connected ✓';
+                } else {
+                    statusIndicator.className = 'status-indicator offline';
+                    statusText.textContent = 'Ollama not running ✗';
+                }
+            } catch (error) {
+                statusIndicator.className = 'status-indicator offline';
+                statusText.textContent = 'Connection error ✗';
+            }
+        }
+
+        // Add message to chat
+        function addMessage(text, sender) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}-message`;
+
+            const bubble = document.createElement('div');
+            bubble.className = 'message-bubble';
+            bubble.textContent = text;
+
+            messageDiv.appendChild(bubble);
+            chatContainer.appendChild(messageDiv);
+
+            // Scroll to bottom
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        // Add loading indicator
+        function showLoading() {
+            const loadingDiv = document.createElement('div');
+            loadingDiv.className = 'message bot-message';
+            loadingDiv.id = 'loading';
+
+            const bubble = document.createElement('div');
+            bubble.className = 'message-bubble loading';
+            bubble.innerHTML = '<span class="typing-indicator"><span></span><span></span><span></span></span>';
+
+            loadingDiv.appendChild(bubble);
+            chatContainer.appendChild(loadingDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        function hideLoading() {
+            const loading = document.getElementById('loading');
+            if (loading) loading.remove();
+        }
+
+        // Send message
+        async function sendMessage() {
+            const message = userInput.value.trim();
+
+            if (!message) return;
+
+            // Clear input
+            userInput.value = '';
+
+            // Add user message
+            addMessage(message, 'user');
+
+            // Show loading
+            showLoading();
+            sendBtn.disabled = true;
+            sendBtn.textContent = 'Thinking...';
+
+            try {
+                const response = await fetch('/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ message: message })
+                });
+
+                const data = await response.json();
+
+                hideLoading();
+
+                if (data.success) {
+                    addMessage(data.response, 'bot');
+                } else {
+                    addMessage('❌ Error: ' + (data.error || 'Unknown error'), 'bot');
+                }
+            } catch (error) {
+                hideLoading();
+                addMessage('❌ Connection error. Make sure Ollama is running!', 'bot');
+            } finally {
+                sendBtn.disabled = false;
+                sendBtn.textContent = 'Send 📤';
+            }
+        }
+
+        // Save conversation
+        async function saveConversation() {
+            saveBtn.disabled = true;
+            saveBtn.textContent = 'Saving...';
+
+            try {
+                const response = await fetch('/save', {
+                    method: 'POST'
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    alert('✅ Conversation saved to web_conversation_log.json');
+                } else {
+                    alert('❌ Error saving: ' + (data.error || 'Unknown error'));
+                }
+            } catch (error) {
+                alert('❌ Error saving conversation');
+            } finally {
+                saveBtn.disabled = false;
+                saveBtn.textContent = 'Save Chat 💾';
+            }
+        }
+
+        // Event listeners
+        sendBtn.addEventListener('click', sendMessage);
+        saveBtn.addEventListener('click', saveConversation);
+
+        userInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+
+        // Check status on load and every 10 seconds
+        checkStatus();
+        setInterval(checkStatus, 10000);
+
+        // Focus input on load
+        userInput.focus();
+    </script>
+</body>
+</html>

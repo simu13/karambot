@@ -1,0 +1,7 @@
+# KaramBot Requirements
+# Python 3.11+ recommended
+
+# Core dependencies
+requests>=2.31.0
+flask>=3.0.0
+gunicorn>=21.0.0
