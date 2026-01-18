@@ -22,10 +22,6 @@ class KaramBot:
         """
         self.model = model
         self.groq_url = "https://api.groq.com/openai/v1/chat/completions"
-        self.api_key = os.environ.get("GROQ_API_KEY")
-        if not self.api_key:
-            raise ValueError("GROQ_API_KEY environment variable is required")
-
         self.request_timeout = int(os.environ.get("KARAMBOT_TIMEOUT", "60"))
         self.conversation_history = []
 
@@ -36,6 +32,13 @@ class KaramBot:
 
         # Create system prompt
         self.system_prompt = self._create_system_prompt()
+
+    def _get_api_key(self):
+        """Get API key at runtime"""
+        api_key = os.environ.get("GROQ_API_KEY")
+        if not api_key:
+            raise ValueError("GROQ_API_KEY environment variable is required")
+        return api_key
 
     def _create_system_prompt(self):
         """Create the system prompt that defines KaramBot's personality"""
@@ -161,10 +164,11 @@ Remember: You're here to provide spiritual support, not medical or psychological
 
         # Call Groq API
         try:
+            api_key = self._get_api_key()
             response = requests.post(
                 self.groq_url,
                 headers={
-                    "Authorization": f"Bearer {self.api_key}",
+                    "Authorization": f"Bearer {api_key}",
                     "Content-Type": "application/json"
                 },
                 json={
