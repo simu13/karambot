@@ -26,6 +26,13 @@ def index():
 @app.route('/chat', methods=['POST'])
 def chat():
     """Handle chat messages"""
+    # Check API key first
+    if not os.environ.get('GROQ_API_KEY'):
+        return jsonify({
+            'error': 'Server configuration error: GROQ_API_KEY not set',
+            'success': False
+        }), 500
+
     try:
         data = request.get_json()
         user_message = data.get('message', '').strip()
@@ -42,6 +49,11 @@ def chat():
             'success': True
         })
 
+    except ValueError as e:
+        return jsonify({
+            'error': f'Configuration error: {str(e)}',
+            'success': False
+        }), 500
     except Exception as e:
         return jsonify({
             'error': str(e),
